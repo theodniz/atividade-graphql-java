@@ -1,0 +1,53 @@
+# Cenário: Biblioteca
+# Relacionamento: um Autor escreve vários Livros (1:N) e cada Livro pertence a um Autor.
+# Os textos entre """ são descrições: aparecem na aba Docs do GraphiQL (auto-documentação).
+
+"""Pessoa que escreveu um ou mais livros do acervo"""
+type Autor {
+  id: ID!
+  nome: String!
+  nacionalidade: String!
+  """Livros deste autor (relacionamento Autor -> [Livro])"""
+  livros: [Livro!]!
+}
+
+"""Livro do acervo da biblioteca"""
+type Livro {
+  id: ID!
+  titulo: String!
+  """Ano de publicação"""
+  ano: Int!
+  genero: String!
+  """Nota média dos leitores, de 0 a 5"""
+  nota: Float!
+  """true se o livro está na estante, false se está emprestado"""
+  disponivel: Boolean!
+  """Autor do livro (relacionamento Livro -> Autor)"""
+  autor: Autor!
+}
+
+type Query {
+  """Lista todos os livros, ou só os de um gênero"""
+  livros(genero: String): [Livro!]!
+  """Busca um livro pelo id"""
+  livro(id: ID!): Livro
+  """Lista todos os autores"""
+  autores: [Autor!]!
+  """Busca um autor pelo id"""
+  autor(id: ID!): Autor
+}
+
+"""Dados para cadastrar um livro"""
+input NovoLivroInput {
+  titulo: String!
+  ano: Int!
+  genero: String!
+  autorId: ID!
+}
+
+type Mutation {
+  """Cadastra um livro novo no acervo"""
+  adicionarLivro(input: NovoLivroInput!): Livro!
+  """Marca um livro como emprestado"""
+  emprestarLivro(id: ID!): Livro!
+}

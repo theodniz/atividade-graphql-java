@@ -1,0 +1,461 @@
+======================================================================
+Query 1 - Query simples: listar livros pedindo só título e ano
+======================================================================
+POST /graphql
+query {
+  livros {
+    titulo
+    ano
+  }
+}
+
+Resposta (HTTP 200):
+{
+  "data": {
+    "livros": [
+      {
+        "titulo": "Dom Casmurro",
+        "ano": 1899
+      },
+      {
+        "titulo": "Memórias Póstumas de Brás Cubas",
+        "ano": 1881
+      },
+      {
+        "titulo": "A Hora da Estrela",
+        "ano": 1977
+      },
+      {
+        "titulo": "1984",
+        "ano": 1949
+      },
+      {
+        "titulo": "A Revolução dos Bichos",
+        "ano": 1945
+      }
+    ]
+  }
+}
+
+======================================================================
+Query 2 - Mesma query, agora o cliente pede outros campos
+======================================================================
+POST /graphql
+query {
+  livros {
+    id
+    titulo
+    genero
+    nota
+    disponivel
+  }
+}
+
+Resposta (HTTP 200):
+{
+  "data": {
+    "livros": [
+      {
+        "id": "1",
+        "titulo": "Dom Casmurro",
+        "genero": "Romance",
+        "nota": 4.7,
+        "disponivel": true
+      },
+      {
+        "id": "2",
+        "titulo": "Memórias Póstumas de Brás Cubas",
+        "genero": "Romance",
+        "nota": 4.6,
+        "disponivel": true
+      },
+      {
+        "id": "3",
+        "titulo": "A Hora da Estrela",
+        "genero": "Romance",
+        "nota": 4.4,
+        "disponivel": false
+      },
+      {
+        "id": "4",
+        "titulo": "1984",
+        "genero": "Distopia",
+        "nota": 4.8,
+        "disponivel": true
+      },
+      {
+        "id": "5",
+        "titulo": "A Revolução dos Bichos",
+        "genero": "Fábula",
+        "nota": 4.5,
+        "disponivel": true
+      }
+    ]
+  }
+}
+
+======================================================================
+Query 3 - Argumento com variável: livros de um gênero
+======================================================================
+POST /graphql
+query LivrosPorGenero($genero: String) {
+  livros(genero: $genero) {
+    titulo
+    ano
+  }
+}
+
+Variáveis: {"genero": "Romance"}
+
+Resposta (HTTP 200):
+{
+  "data": {
+    "livros": [
+      {
+        "titulo": "Dom Casmurro",
+        "ano": 1899
+      },
+      {
+        "titulo": "Memórias Póstumas de Brás Cubas",
+        "ano": 1881
+      },
+      {
+        "titulo": "A Hora da Estrela",
+        "ano": 1977
+      }
+    ]
+  }
+}
+
+======================================================================
+Query 4 - Relacionamento Livro -> Autor
+======================================================================
+POST /graphql
+query {
+  livro(id: "4") {
+    titulo
+    ano
+    autor {
+      nome
+      nacionalidade
+    }
+  }
+}
+
+Resposta (HTTP 200):
+{
+  "data": {
+    "livro": {
+      "titulo": "1984",
+      "ano": 1949,
+      "autor": {
+        "nome": "George Orwell",
+        "nacionalidade": "Britânica"
+      }
+    }
+  }
+}
+
+======================================================================
+Query 5 - Relacionamento Autor -> [Livro]
+======================================================================
+POST /graphql
+query {
+  autor(id: "1") {
+    nome
+    livros {
+      titulo
+      ano
+    }
+  }
+}
+
+Resposta (HTTP 200):
+{
+  "data": {
+    "autor": {
+      "nome": "Machado de Assis",
+      "livros": [
+        {
+          "titulo": "Dom Casmurro",
+          "ano": 1899
+        },
+        {
+          "titulo": "Memórias Póstumas de Brás Cubas",
+          "ano": 1881
+        }
+      ]
+    }
+  }
+}
+
+======================================================================
+Query 6 - Query complexa: livro + autor + outros livros do autor (1 chamada no lugar de 3 em REST)
+======================================================================
+POST /graphql
+query {
+  livro(id: "4") {
+    titulo
+    nota
+    autor {
+      nome
+      livros {
+        titulo
+        ano
+      }
+    }
+  }
+}
+
+Resposta (HTTP 200):
+{
+  "data": {
+    "livro": {
+      "titulo": "1984",
+      "nota": 4.8,
+      "autor": {
+        "nome": "George Orwell",
+        "livros": [
+          {
+            "titulo": "1984",
+            "ano": 1949
+          },
+          {
+            "titulo": "A Revolução dos Bichos",
+            "ano": 1945
+          }
+        ]
+      }
+    }
+  }
+}
+
+======================================================================
+Mutation 1 - Adicionar um livro
+======================================================================
+POST /graphql
+mutation NovoLivro($input: NovoLivroInput!) {
+  adicionarLivro(input: $input) {
+    id
+    titulo
+    disponivel
+    autor {
+      nome
+    }
+  }
+}
+
+Variáveis: {"input": {"titulo": "Laços de Família", "ano": 1960, "genero": "Contos", "autorId": "2"}}
+
+Resposta (HTTP 200):
+{
+  "data": {
+    "adicionarLivro": {
+      "id": "6",
+      "titulo": "Laços de Família",
+      "disponivel": true,
+      "autor": {
+        "nome": "Clarice Lispector"
+      }
+    }
+  }
+}
+
+======================================================================
+Mutation 2 - Emprestar um livro
+======================================================================
+POST /graphql
+mutation {
+  emprestarLivro(id: "1") {
+    titulo
+    disponivel
+  }
+}
+
+Resposta (HTTP 200):
+{
+  "data": {
+    "emprestarLivro": {
+      "titulo": "Dom Casmurro",
+      "disponivel": false
+    }
+  }
+}
+
+======================================================================
+Query 7 - Conferindo o resultado das mutations
+======================================================================
+POST /graphql
+query {
+  autores {
+    nome
+    livros {
+      titulo
+      disponivel
+    }
+  }
+}
+
+Resposta (HTTP 200):
+{
+  "data": {
+    "autores": [
+      {
+        "nome": "Machado de Assis",
+        "livros": [
+          {
+            "titulo": "Dom Casmurro",
+            "disponivel": false
+          },
+          {
+            "titulo": "Memórias Póstumas de Brás Cubas",
+            "disponivel": true
+          }
+        ]
+      },
+      {
+        "nome": "Clarice Lispector",
+        "livros": [
+          {
+            "titulo": "A Hora da Estrela",
+            "disponivel": false
+          },
+          {
+            "titulo": "Laços de Família",
+            "disponivel": true
+          }
+        ]
+      },
+      {
+        "nome": "George Orwell",
+        "livros": [
+          {
+            "titulo": "1984",
+            "disponivel": true
+          },
+          {
+            "titulo": "A Revolução dos Bichos",
+            "disponivel": true
+          }
+        ]
+      }
+    ]
+  }
+}
+
+======================================================================
+Erro - Mutation com autor inexistente (erro vem no campo "errors")
+======================================================================
+POST /graphql
+mutation {
+  adicionarLivro(input: {titulo: "Livro X", ano: 2024, genero: "Teste", autorId: "99"}) {
+    id
+  }
+}
+
+Resposta (HTTP 200):
+{
+  "errors": [
+    {
+      "message": "Autor com id 99 não existe",
+      "locations": [
+        {
+          "line": 2,
+          "column": 3
+        }
+      ],
+      "path": [
+        "adicionarLivro"
+      ],
+      "extensions": {
+        "classification": "BAD_REQUEST"
+      }
+    }
+  ],
+  "data": null
+}
+
+======================================================================
+Erro - Validação contra o Schema: campo que não existe
+======================================================================
+POST /graphql
+query {
+  livro(id: "1") {
+    titulo
+    editora
+  }
+}
+
+Resposta (HTTP 200):
+{
+  "errors": [
+    {
+      "message": "Validation error (FieldUndefined@[livro/editora]) : Field 'editora' in type 'Livro' is undefined",
+      "locations": [
+        {
+          "line": 4,
+          "column": 5
+        }
+      ],
+      "extensions": {
+        "classification": "ValidationError"
+      }
+    }
+  ]
+}
+
+======================================================================
+Introspection - O cliente consulta o próprio Schema (auto-documentação)
+======================================================================
+POST /graphql
+query {
+  __type(name: "Livro") {
+    name
+    description
+    fields {
+      name
+      description
+    }
+  }
+}
+
+Resposta (HTTP 200):
+{
+  "data": {
+    "__type": {
+      "name": "Livro",
+      "description": "Livro do acervo da biblioteca",
+      "fields": [
+        {
+          "name": "id",
+          "description": null
+        },
+        {
+          "name": "titulo",
+          "description": null
+        },
+        {
+          "name": "ano",
+          "description": "Ano de publicação"
+        },
+        {
+          "name": "genero",
+          "description": null
+        },
+        {
+          "name": "nota",
+          "description": "Nota média dos leitores, de 0 a 5"
+        },
+        {
+          "name": "disponivel",
+          "description": "true se o livro está na estante, false se está emprestado"
+        },
+        {
+          "name": "autor",
+          "description": "Autor do livro (relacionamento Livro -> Autor)"
+        }
+      ]
+    }
+  }
+}
+
